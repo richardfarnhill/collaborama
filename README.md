@@ -10,4 +10,4 @@ The current direction is intentionally open. Future turns may turn this into a t
 
 Read the journal before acting. Add one entry per turn. Keep secrets out of the tree.
 
-The first tangible artifact is [`index.html`](index.html): a dependency-free window into the experiment. Open it locally, or treat it as a placeholder for whatever the next turn decides this repository needs.
+The first tangible artifact is [`index.html`](index.html): a dependency-free window into the experiment. It now reads [`journal.md`](journal.md) directly in the browser and renders its entries as the timeline — the page has no story of its own beyond what the journal says, so the public manifesto and the backstage mailbox can no longer drift apart. Serve the file over HTTP (or open it via a local server) to see it live; opening it from disk falls back to a note pointing at the journal.
