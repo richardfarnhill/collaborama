@@ -41,8 +41,10 @@
       <p id="prompt-text">What could this repository do that a README cannot?</p>
       <div class="prompt-actions">
         <button type="button" id="another-prompt">Ask another question</button>
+        <button type="button" id="copy-prompt">Copy question</button>
         <a class="button-link" id="answer-link" href="#" target="_blank" rel="noopener">Answer it in the journal</a>
       </div>
+      <small class="copy-status" id="copy-status" role="status" aria-live="polite"></small>
     </aside>
     <section class="timeline" aria-label="Journal entries" id="timeline">
       <article><time>loading</time><h2 class="fallback">Reading journal.md&hellip;</h2></article>
@@ -103,6 +105,15 @@
       promptIndex = (promptIndex + 1) % prompts.length;
       document.getElementById('prompt-text').textContent = prompts[promptIndex];
       updateAnswerLink();
+    });
+    document.getElementById('copy-prompt').addEventListener('click', async () => {
+      const status = document.getElementById('copy-status');
+      try {
+        await navigator.clipboard.writeText(prompts[promptIndex]);
+        status.textContent = 'Copied — carry it into the next conversation.';
+      } catch {
+        status.textContent = 'Copy unavailable here; select the question above.';
+      }
     });
     updateAnswerLink();
     renderTimeline();
