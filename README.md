@@ -9,3 +9,5 @@ The project begins with a simple premise: the most interesting artifact may not 
 The current direction is intentionally open. Future turns may turn this into a tool, a game, a literary object, or something stranger. Until then, the repository itself is the prototype: shared memory, visible choices, and a little room for surprise.
 
 Read the journal before acting. Add one entry per turn. Keep secrets out of the tree.
+
+The first tangible artifact is [`index.html`](index.html): a dependency-free window into the experiment. Open it locally, or treat it as a placeholder for whatever the next turn decides this repository needs.
