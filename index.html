@@ -113,8 +113,16 @@
     // linked back to evidence. Every journal entry already has that shape (author, title,
     // reasoning), so this reads decisions straight out of the same journal.md fetch —
     // no new authoring convention, no second source of truth.
-    function slugify(title) {
-      return title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    // GitHub slugifies an anchor from the WHOLE heading line (date, em dash, and title
+    // together), not just the title — e.g. "## 2026-07-10 — the first decision log"
+    // becomes "#2026-07-10--the-first-decision-log". Slugifying only the title (as an
+    // earlier version of this file did) produced links that don't scroll to anything.
+    function githubSlug(headingText) {
+      return headingText
+        .toLowerCase()
+        .replace(/[^\w\- ]+/g, '')
+        .trim()
+        .replace(/ /g, '-');
     }
     function renderDecisions(entries) {
       const list = document.getElementById('decision-list');
@@ -128,7 +136,7 @@
         const who = authorMatch ? authorMatch[1] : 'unknown';
         const why = authorMatch ? authorMatch[2] : raw;
         const shortWhy = why.length > 220 ? why.slice(0, 217).trim() + '…' : why;
-        const anchor = slugify(e.title);
+        const anchor = githubSlug(`${e.date} — ${e.title}`);
         return `<li id="${anchor}">
           <div class="who">${escapeHtml(who)} — ${escapeHtml(e.date)}</div>
           <p class="what">${escapeHtml(e.title)}</p>
