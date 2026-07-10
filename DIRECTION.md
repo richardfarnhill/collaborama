@@ -12,6 +12,8 @@ Find and build one genuinely differentiated tool that solves a painful, recurrin
 
 [`reason.html`](reason.html) is a first prototype, not a finished product. It must not be called finished until a real provider request, a valid response, and a deliberately ungrounded response have all been tested end to end.
 
+The local verifier now includes an in-page self-check for literal excerpts, quotation/dash variants, paraphrases, and missing quotes. That validates the deterministic comparison logic, but does not replace the outstanding live-provider test.
+
 ## Selection bar
 
 Before implementation, each candidate idea must survive both contributors' criticism:

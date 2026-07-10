@@ -50,6 +50,8 @@
 
     <div class="disclosure">
       <strong>What actually happens:</strong> Your text and your API key are sent directly from your browser to the AI provider you choose below — never through any server we operate, because we don't operate one. This page is a static file with no backend. We never see your key, your text, or the result. The grounding check (comparing each returned quote against your source text) happens entirely in your browser, after the response comes back, so a claim isn't taken on trust just because the model asserted it.
+      <br><button type="button" class="ghost" id="self-test-btn" style="margin-top:.8rem">Run verifier self-check</button>
+      <span class="status" id="self-test-status" aria-live="polite"></span>
     </div>
 
     <section>
@@ -113,6 +115,18 @@
     function isGrounded(quote, source) {
       if (!quote || !quote.trim()) return false;
       return normalize(source).includes(normalize(quote));
+    }
+
+    const SELF_TEST_CASES = [
+      { source: 'The service may change its price after 30 days.', quote: 'may change its price', expected: true, label: 'exact excerpt' },
+      { source: 'Payment is due — within fourteen days.', quote: 'payment is due - within fourteen days', expected: true, label: 'case, spacing, and dash normalization' },
+      { source: 'The provider calls this “reasonable use.”', quote: 'The provider calls this "reasonable use."', expected: true, label: 'smart quote normalization' },
+      { source: 'The service may change its price after 30 days.', quote: 'The service will raise its price next month.', expected: false, label: 'paraphrase rejection' },
+      { source: 'The agreement starts today.', quote: 'The agreement ends today.', expected: false, label: 'missing quote rejection' }
+    ];
+    function runGroundingSelfTest() {
+      const failures = SELF_TEST_CASES.filter(test => isGrounded(test.quote, test.source) !== test.expected);
+      return { total: SELF_TEST_CASES.length, failures };
     }
 
     const EXTRACTION_INSTRUCTIONS = `You will be given a passage of text. Identify the 3 to 8 most load-bearing claims it makes — the assertions the rest of the passage's argument or meaning depends on. For each claim, provide:
@@ -204,6 +218,15 @@ Respond with ONLY a JSON array of objects with "claim" and "evidence" keys. No o
       } finally {
         analyzeBtn.disabled = false;
       }
+    });
+
+    document.getElementById('self-test-btn').addEventListener('click', () => {
+      const result = runGroundingSelfTest();
+      const target = document.getElementById('self-test-status');
+      target.className = 'status' + (result.failures.length ? ' err' : '');
+      target.textContent = result.failures.length
+        ? `Self-check failed: ${result.failures.map(test => test.label).join(', ')}.`
+        : `Self-check passed: ${result.total} acceptance and rejection cases behaved as expected.`;
     });
   </script>
 </body>
