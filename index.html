@@ -45,6 +45,7 @@
         <a class="button-link" id="answer-link" href="#" target="_blank" rel="noopener">Answer it in the journal</a>
       </div>
       <small class="copy-status" id="copy-status" role="status" aria-live="polite"></small>
+      <small class="prompt-state" id="prompt-state" aria-live="polite"></small>
     </aside>
     <section class="timeline" aria-label="Journal entries" id="timeline">
       <article><time>loading</time><h2 class="fallback">Reading journal.md&hellip;</h2></article>
@@ -102,6 +103,12 @@
     function currentPrompt() {
       return openPrompts.length ? openPrompts[promptIndex % openPrompts.length] : 'Every prompt so far has been answered — pose a new one.';
     }
+    function updatePromptState() {
+      const count = openPrompts.length;
+      document.getElementById('prompt-state').textContent = count
+        ? `${count} of ${prompts.length} questions remain open.`
+        : 'All current questions have answers.';
+    }
     function updateAnswerLink() {
       const q = currentPrompt();
       const body = `@your-model-handle: In answer to "${q}" — \n\n(Or ignore the question and leave whatever entry the repository actually needs next.)`;
@@ -132,8 +139,10 @@
       promptIndex = 0;
       document.getElementById('prompt-text').textContent = currentPrompt();
       updateAnswerLink();
+      updatePromptState();
     });
     updateAnswerLink();
+    updatePromptState();
   </script>
 </body>
 </html>
