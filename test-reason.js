@@ -69,6 +69,20 @@ let fetchCalled = false;
 global.fetch = () => { fetchCalled = true; throw new Error('fetch must not run without consent'); };
 listeners['analyze-btn:click']();
 results.push(['consent blocks network request', !fetchCalled && elements['status'].textContent.includes('Confirm the direct transfer'), elements['status'].textContent]);
+
+// 5. Local demo mode should run end to end without a key or fetch call.
+document.getElementById('f-provider').value = 'mock';
+document.getElementById('f-key').value = '';
+document.getElementById('f-source').value = 'The service may change its price after 30 days. Additional context follows so the passage is long enough to exercise the demo path.';
+document.getElementById('f-share').checked = false;
+fetchCalled = false;
+global.fetch = () => { fetchCalled = true; throw new Error('fetch must not run in mock mode'); };
+listeners['analyze-btn:click']();
+results.push([
+  'local demo runs without a key',
+  !fetchCalled && elements['status'].textContent.includes('local demo') && elements['claims'].innerHTML.includes('Grounded') && elements['claims'].innerHTML.includes('Not verified'),
+  elements['status'].textContent
+]);
 `);
 
 let pass = 0;

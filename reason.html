@@ -25,6 +25,7 @@
     .key-row > div { flex:1; }
     .consent { display:flex; gap:.6rem; align-items:flex-start; margin-top:.9rem; color:var(--muted); font-size:.9rem; }
     .consent input { width:auto; margin-top:.25rem; }
+    .hint { margin:.45rem 0 0; color:var(--muted); font-size:.85rem; }
     button { border:1px solid var(--accent); border-radius:4px; padding:.65rem 1.1rem; background:var(--accent); color:var(--bg); font:inherit; font-weight:600; cursor:pointer; white-space:nowrap; }
     button:hover:not(:disabled), button:focus-visible:not(:disabled) { filter:brightness(1.08); }
     button:disabled { opacity:.5; cursor:not-allowed; }
@@ -62,12 +63,14 @@
         <div>
           <label for="f-provider">Provider</label>
           <select id="f-provider">
+            <option value="mock">Local demo (no API key)</option>
             <option value="anthropic">Anthropic (Claude)</option>
             <option value="openai">OpenAI</option>
           </select>
+          <p class="hint">The local demo runs entirely in this tab. Switch to a live provider only when you want to send text directly to Anthropic or OpenAI.</p>
         </div>
         <div>
-          <label for="f-key">API key (kept only in this tab's memory, never stored)</label>
+          <label for="f-key">API key for live providers (kept only in this tab's memory, never stored)</label>
           <input type="password" id="f-key" placeholder="sk-... or sk-ant-..." autocomplete="off">
         </div>
       </div>
@@ -78,7 +81,7 @@
       <textarea id="f-source" placeholder="Paste a contract clause, an article, terms of service, or any other dense text here..."></textarea>
       <label class="consent" for="f-share">
         <input type="checkbox" id="f-share">
-        <span>I understand that this text and my API key will be sent directly to the selected provider for this analysis. Nothing is sent to Collaborama.</span>
+        <span>I understand that, if I choose a live provider, this text and my API key will be sent directly to that provider for this analysis. Nothing is sent to Collaborama.</span>
       </label>
       <button type="button" id="analyze-btn" style="margin-top:.8rem">Extract and verify claims</button>
       <div class="status" id="status"></div>
@@ -176,6 +179,28 @@ Respond with ONLY a JSON array of objects with "claim" and "evidence" keys. No o
       return data.choices?.[0]?.message?.content || '';
     }
 
+    function pickGroundedExcerpt(source) {
+      const trimmed = source.trim();
+      if (!trimmed) return '';
+      const boundary = trimmed.search(/[.!?]\s/);
+      if (boundary !== -1) return trimmed.slice(0, boundary + 1).trim();
+      return trimmed.slice(0, Math.min(120, trimmed.length)).trim();
+    }
+
+    function callMock(source) {
+      const grounded = pickGroundedExcerpt(source) || source.trim().slice(0, 120);
+      return JSON.stringify([
+        {
+          claim: 'The passage contains a directly verifiable statement from the source.',
+          evidence: grounded
+        },
+        {
+          claim: 'The passage also contains a statement that is not supported by the source text.',
+          evidence: 'This supporting quote does not appear anywhere in the pasted passage.'
+        }
+      ]);
+    }
+
     function parseClaims(raw) {
       // Models wrap JSON in markdown fences, add trailing newlines, or prepend
       // "Here are the claims:" despite instructions not to. Rather than pattern-match
@@ -211,20 +236,27 @@ Respond with ONLY a JSON array of objects with "claim" and "evidence" keys. No o
       const provider = document.getElementById('f-provider').value;
       const key = document.getElementById('f-key').value.trim();
       const source = document.getElementById('f-source').value;
-      if (!key) { setStatus('Enter an API key first — it is used only for this request and never stored.', true); return; }
       if (!source.trim() || source.trim().length < 40) { setStatus('Paste a longer passage of text to analyze.', true); return; }
-      if (!document.getElementById('f-share').checked) { setStatus('Confirm the direct transfer to your selected provider before analysis.', true); return; }
+      const needsLiveConsent = provider !== 'mock';
+      if (needsLiveConsent && !key) { setStatus('Enter an API key first — it is used only for this request and never stored.', true); return; }
+      if (needsLiveConsent && !document.getElementById('f-share').checked) { setStatus('Confirm the direct transfer to your selected provider before analysis.', true); return; }
 
       analyzeBtn.disabled = true;
-      setStatus('Sending your text directly to ' + (provider === 'anthropic' ? 'Anthropic' : 'OpenAI') + '…');
+      setStatus(provider === 'mock'
+        ? 'Running the local demo analysis entirely in this tab…'
+        : 'Sending your text directly to ' + (provider === 'anthropic' ? 'Anthropic' : 'OpenAI') + '…');
       claimsEl.innerHTML = '';
 
       try {
-        const raw = provider === 'anthropic' ? await callAnthropic(key, source) : await callOpenAI(key, source);
+        const raw = provider === 'mock'
+          ? callMock(source)
+          : (provider === 'anthropic' ? await callAnthropic(key, source) : await callOpenAI(key, source));
         const claims = parseClaims(raw);
         renderClaims(claims, source);
         const groundedCount = claims.filter(c => isGrounded(c.evidence, source)).length;
-        setStatus(`${claims.length} claim(s) extracted — ${groundedCount} verified against your source text, ${claims.length - groundedCount} not verified.`);
+        setStatus(provider === 'mock'
+          ? `${claims.length} claim(s) extracted in the local demo — ${groundedCount} verified against your source text, ${claims.length - groundedCount} not verified.`
+          : `${claims.length} claim(s) extracted — ${groundedCount} verified against your source text, ${claims.length - groundedCount} not verified.`);
       } catch (err) {
         setStatus(err.message || 'Something went wrong.', true);
       } finally {

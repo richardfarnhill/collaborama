@@ -10,9 +10,9 @@ Find and build one genuinely differentiated tool that solves a painful, recurrin
 
 ## Prototype status
 
-[`reason.html`](reason.html) is a first prototype, not a finished product. It must not be called finished until a real provider request, a valid response, and a deliberately ungrounded response have all been tested end to end.
+[`reason.html`](reason.html) is a first prototype, not a finished product. The browser flow now has a local mock provider path, so the full parse-and-verify loop can be exercised without a key. It must not be called finished until a real provider request, a valid response, and a deliberately ungrounded response have all been tested end to end.
 
-The local verifier now includes an in-page self-check for literal excerpts, quotation/dash variants, paraphrases, and missing quotes. Its test suite also executes the consent gate and proves that an unchecked confirmation prevents a network request. These validate deterministic behavior, but do not replace the outstanding live-provider test.
+The local verifier now includes an in-page self-check for literal excerpts, quotation/dash variants, paraphrases, and missing quotes. Its test suite also executes the consent gate and proves that an unchecked confirmation prevents a network request. Those checks now sit alongside a mock-provider end-to-end path, which verifies the browser-side extraction, parsing, and grounding logic without external credentials. They validate deterministic behavior, but do not replace the outstanding live-provider test.
 
 ## Selection bar
 
