@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reason — evidence-linked document reasoning</title>
+  <style>
+    :root { color-scheme: dark; --ink:#f4efe6; --muted:#a9a49b; --line:#3c3a36; --accent:#ffb86b; --bg:#171614; --good:#7cc48a; --bad:#e08585; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; background:var(--bg); color:var(--ink); font:16px/1.55 system-ui, sans-serif; }
+    main { width:min(880px, calc(100% - 40px)); margin:0 auto; padding:6vh 0 10vh; }
+    h1 { font:clamp(1.8rem, 5vw, 2.6rem)/1.1 Georgia, serif; letter-spacing:-.02em; margin:0 0 .3rem; }
+    .lede { color:var(--muted); max-width:680px; margin:0 0 1.5rem; }
+    .lede strong { color:var(--ink); }
+    section { margin-bottom:2.2rem; }
+    h2 { font-size:1rem; letter-spacing:.03em; text-transform:uppercase; color:var(--accent); margin:0 0 1rem; }
+    .disclosure { border:1px solid var(--line); border-radius:6px; padding:1rem 1.2rem; background:#1c1a17; font-size:.9rem; color:var(--muted); margin-bottom:2rem; }
+    .disclosure strong { color:var(--ink); }
+    label { display:block; font-size:.75rem; color:var(--muted); margin-bottom:.35rem; text-transform:uppercase; letter-spacing:.05em; }
+    select, input, textarea { width:100%; border:1px solid var(--line); border-radius:4px; padding:.6rem .7rem; background:#1c1a17; color:var(--ink); font:inherit; }
+    textarea { min-height:220px; resize:vertical; font-family:ui-monospace, Consolas, monospace; font-size:.88rem; }
+    input:focus, select:focus, textarea:focus { outline:2px solid var(--accent); outline-offset:1px; }
+    .row { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem; }
+    .key-row { display:flex; gap:.6rem; align-items:end; }
+    .key-row > div { flex:1; }
+    button { border:1px solid var(--accent); border-radius:4px; padding:.65rem 1.1rem; background:var(--accent); color:var(--bg); font:inherit; font-weight:600; cursor:pointer; white-space:nowrap; }
+    button:hover:not(:disabled), button:focus-visible:not(:disabled) { filter:brightness(1.08); }
+    button:disabled { opacity:.5; cursor:not-allowed; }
+    button.ghost { background:transparent; color:var(--muted); border-color:var(--line); font-weight:400; }
+    .status { font-size:.85rem; color:var(--muted); margin-top:.6rem; min-height:1.2em; }
+    .status.err { color:var(--bad); }
+    .claim { border:1px solid var(--line); border-radius:6px; padding:1rem 1.1rem; margin-bottom:.8rem; background:#1c1a17; }
+    .claim.grounded { border-left:3px solid var(--good); }
+    .claim.ungrounded { border-left:3px solid var(--bad); }
+    .claim-text { font-weight:600; margin:0 0 .5rem; }
+    .claim-evidence { margin:.4rem 0 0; padding:.6rem .8rem; border-radius:4px; background:#211f1b; font-size:.87rem; color:var(--muted); font-style:italic; }
+    .claim-tag { display:inline-block; font-size:.7rem; text-transform:uppercase; letter-spacing:.05em; padding:.15rem .5rem; border-radius:3px; margin-bottom:.5rem; }
+    .claim-tag.grounded { background:rgba(124,196,138,.15); color:var(--good); }
+    .claim-tag.ungrounded { background:rgba(224,133,133,.15); color:var(--bad); }
+    .empty { color:var(--muted); font-style:italic; }
+    footer { border-top:1px solid var(--line); padding-top:1.2rem; color:var(--muted); font-size:.85rem; margin-top:2rem; }
+    footer a { color:var(--muted); }
+    code { color:var(--ink); }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Reason</h1>
+    <p class="lede"><strong>See which claims a piece of writing actually supports — and which it doesn't.</strong> Paste any dense text (a contract clause, an article, terms of service) and this extracts its claims, each linked to the exact sentence it's supposedly based on. Every linked quote is then checked against your original text automatically. If a claim's "evidence" isn't actually there, word for word, it's marked ungrounded — not hidden, not smoothed over.</p>
+
+    <div class="disclosure">
+      <strong>What actually happens:</strong> Your text and your API key are sent directly from your browser to the AI provider you choose below — never through any server we operate, because we don't operate one. This page is a static file with no backend. We never see your key, your text, or the result. The grounding check (comparing each returned quote against your source text) happens entirely in your browser, after the response comes back, so a claim isn't taken on trust just because the model asserted it.
+    </div>
+
+    <section>
+      <h2>1. Choose a provider and supply your own key</h2>
+      <div class="row">
+        <div>
+          <label for="f-provider">Provider</label>
+          <select id="f-provider">
+            <option value="anthropic">Anthropic (Claude)</option>
+            <option value="openai">OpenAI</option>
+          </select>
+        </div>
+        <div>
+          <label for="f-key">API key (kept only in this tab's memory, never stored)</label>
+          <input type="password" id="f-key" placeholder="sk-... or sk-ant-..." autocomplete="off">
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>2. Paste the text to examine</h2>
+      <textarea id="f-source" placeholder="Paste a contract clause, an article, terms of service, or any other dense text here..."></textarea>
+      <button type="button" id="analyze-btn" style="margin-top:.8rem">Extract and verify claims</button>
+      <div class="status" id="status"></div>
+    </section>
+
+    <section>
+      <h2>3. Claims, each checked against your text</h2>
+      <div id="claims"><p class="empty">Results will appear here after analysis.</p></div>
+    </section>
+
+    <footer>
+      Part of <a href="index.html">Collaborama</a>. No account, no server, no stored key — the trust boundary is that nothing leaves your browser except the direct call to the provider you chose, with the key you supplied.
+    </footer>
+  </main>
+
+  <script>
+    const statusEl = document.getElementById('status');
+    const claimsEl = document.getElementById('claims');
+    const analyzeBtn = document.getElementById('analyze-btn');
+
+    function setStatus(msg, isError) {
+      statusEl.textContent = msg;
+      statusEl.className = 'status' + (isError ? ' err' : '');
+    }
+
+    // The model is asked to return each claim with a VERBATIM supporting quote. We never
+    // trust that the quote is accurate just because the model says so — every quote is
+    // checked against the actual source text in this function, locally, after the response
+    // arrives. This is the actual mechanism for "no fabricated certainty", not a prompt
+    // instruction the model could ignore or hallucinate around.
+    function normalize(s) {
+      return s.toLowerCase().replace(/\s+/g, ' ').trim();
+    }
+    function isGrounded(quote, source) {
+      if (!quote || !quote.trim()) return false;
+      return normalize(source).includes(normalize(quote));
+    }
+
+    const EXTRACTION_INSTRUCTIONS = `You will be given a passage of text. Identify the 3 to 8 most load-bearing claims it makes — the assertions the rest of the passage's argument or meaning depends on. For each claim, provide:
+- "claim": a one-sentence plain statement of what is being asserted
+- "evidence": a VERBATIM quote copied exactly from the passage that this claim is based on (do not paraphrase or summarize the quote — copy it exactly, character for character, from the source)
+
+Respond with ONLY a JSON array of objects with "claim" and "evidence" keys. No other text, no markdown fences.`;
+
+    async function callAnthropic(key, source) {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          'x-api-key': key,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({
+          model: 'claude-3-5-sonnet-20241022',
+          max_tokens: 1500,
+          messages: [{ role: 'user', content: `${EXTRACTION_INSTRUCTIONS}\n\nPassage:\n"""\n${source}\n"""` }]
+        })
+      });
+      if (!res.ok) throw new Error(`Anthropic API error (${res.status}): ${(await res.text()).slice(0, 200)}`);
+      const data = await res.json();
+      return data.content?.[0]?.text || '';
+    }
+
+    async function callOpenAI(key, source) {
+      const res = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: `Bearer ${key}` },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [{ role: 'user', content: `${EXTRACTION_INSTRUCTIONS}\n\nPassage:\n"""\n${source}\n"""` }],
+          temperature: 0
+        })
+      });
+      if (!res.ok) throw new Error(`OpenAI API error (${res.status}): ${(await res.text()).slice(0, 200)}`);
+      const data = await res.json();
+      return data.choices?.[0]?.message?.content || '';
+    }
+
+    function parseClaims(raw) {
+      const cleaned = raw.replace(/^```(json)?/i, '').replace(/```$/, '').trim();
+      const parsed = JSON.parse(cleaned);
+      if (!Array.isArray(parsed)) throw new Error('Model did not return a JSON array.');
+      return parsed.filter(c => c && typeof c.claim === 'string' && typeof c.evidence === 'string');
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    function renderClaims(claims, source) {
+      if (!claims.length) {
+        claimsEl.innerHTML = '<p class="empty">No claims were returned.</p>';
+        return;
+      }
+      claimsEl.innerHTML = claims.map(c => {
+        const grounded = isGrounded(c.evidence, source);
+        return `<div class="claim ${grounded ? 'grounded' : 'ungrounded'}">
+          <span class="claim-tag ${grounded ? 'grounded' : 'ungrounded'}">${grounded ? 'Grounded — quote verified in source' : 'Not verified — quote not found in source text'}</span>
+          <p class="claim-text">${escapeHtml(c.claim)}</p>
+          <p class="claim-evidence">"${escapeHtml(c.evidence)}"</p>
+        </div>`;
+      }).join('');
+    }
+
+    analyzeBtn.addEventListener('click', async () => {
+      const provider = document.getElementById('f-provider').value;
+      const key = document.getElementById('f-key').value.trim();
+      const source = document.getElementById('f-source').value;
+      if (!key) { setStatus('Enter an API key first — it is used only for this request and never stored.', true); return; }
+      if (!source.trim() || source.trim().length < 40) { setStatus('Paste a longer passage of text to analyze.', true); return; }
+
+      analyzeBtn.disabled = true;
+      setStatus('Sending your text directly to ' + (provider === 'anthropic' ? 'Anthropic' : 'OpenAI') + '…');
+      claimsEl.innerHTML = '';
+
+      try {
+        const raw = provider === 'anthropic' ? await callAnthropic(key, source) : await callOpenAI(key, source);
+        const claims = parseClaims(raw);
+        renderClaims(claims, source);
+        const groundedCount = claims.filter(c => isGrounded(c.evidence, source)).length;
+        setStatus(`${claims.length} claim(s) extracted — ${groundedCount} verified against your source text, ${claims.length - groundedCount} not verified.`);
+      } catch (err) {
+        setStatus(err.message || 'Something went wrong.', true);
+      } finally {
+        analyzeBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
