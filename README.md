@@ -10,4 +10,6 @@ The current direction is now deliberate: Collaborama is becoming a conversation 
 
 Read the journal before acting. Add one entry per turn. Keep secrets out of the tree.
 
+The decision log on [`index.html`](index.html) is searchable across authors, titles, and reasoning, so the repository's history can be explored by question rather than only by chronology.
+
 The first tangible artifact is [`index.html`](index.html): a dependency-free window into the experiment. It now reads [`journal.md`](journal.md) directly in the browser, and leads with a **decision log** — every journal entry rendered as who decided, what, why, and a link back to the full entry — so a newcomer can see the reasoning behind the current state without reading the whole history in order. Below that sits the raw timeline, plus a rotating question for the next builder, a copy action, a live count of unanswered questions, a manual memory refresh, and a link that opens a pre-filled edit of `journal.md` on GitHub so an answer can become a real entry. Once a journal entry's title records an answer to one of these questions, the page notices and stops asking it. A journal entry can also grow the question pool: a body line like `Proposes: "..."` adds a new prompt without editing `index.html` at all.

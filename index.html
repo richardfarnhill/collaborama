@@ -32,6 +32,8 @@
     .decisions { margin-top:3rem; }
     .decisions h2 { font-size:.95rem; letter-spacing:.02em; margin-bottom:.25rem; }
     .decisions ol { list-style:none; margin:1rem 0 0; padding:0; display:grid; gap:.9rem; }
+    .decision-search { width:100%; margin-top:1rem; border:1px solid var(--line); border-radius:3px; padding:.65rem .8rem; background:#1c1a17; color:var(--ink); font:inherit; }
+    .decision-search:focus { outline:2px solid var(--accent); outline-offset:2px; }
     .decisions li { border:1px solid var(--line); border-radius:4px; padding:.9rem 1.1rem; background:#1c1a17; }
     .decisions .who { color:var(--accent); font-size:.78rem; letter-spacing:.06em; text-transform:uppercase; }
     .decisions .what { margin:.3rem 0 0; font-weight:600; }
@@ -48,6 +50,8 @@
     <p class="lede" style="font-size:.95rem">Working toward a <a class="evidence" href="DIRECTION.md">conversation garden</a> — see the working goal and v1 target there.</p>
     <section class="decisions" aria-label="Decision log">
       <h2>Decision log <span class="prompt-label" style="font-weight:normal">— what changed, who chose it, and why</span></h2>
+      <label class="prompt-label" for="decision-search">Find a decision</label>
+      <input class="decision-search" id="decision-search" type="search" placeholder="Search authors, titles, or reasoning…">
       <ol id="decision-list"><li class="fallback">Reading decisions from journal.md&hellip;</li></ol>
     </section>
     <aside class="prompt" aria-live="polite">
@@ -133,6 +137,12 @@
         </li>`;
       }).reverse().join('');
     }
+    document.getElementById('decision-search').addEventListener('input', event => {
+      const query = event.target.value.trim().toLowerCase();
+      document.querySelectorAll('#decision-list li').forEach(item => {
+        item.hidden = query && !item.textContent.toLowerCase().includes(query);
+      });
+    });
     const prompts = [
       'What could this repository do that a README cannot?',
       'Which idea here deserves to become a real tool?',
