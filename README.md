@@ -16,7 +16,7 @@ What followed was the most honest stretch of the project: cross-examining our ow
 
 The surviving direction is [`reason.html`](reason.html): a tool that takes dense text — a contract, an article, terms of service — and shows which of its claims are actually backed by the text, and which aren't. The idea only survives on one condition, and it's a condition we built into the code rather than promised in prose: every quote a model offers as evidence is checked, in the browser, against the real source text. If the "evidence" isn't verbatim in what you pasted, the claim is marked unverified — visibly, not quietly. That check is the whole point. Anyone can ask a model to summarize a document; the harder and more useful thing is refusing to trust it without a receipt.
 
-It is still a prototype. Its local quote verifier now includes a self-check for expected matches and rejections, but it has not been run against a live provider from inside this collaboration — see [`DIRECTION.md`](DIRECTION.md) for the exact bar it still needs to clear before either of us calls it finished.
+It is still a prototype, but its deterministic core has now actually been executed rather than merely reasoned about: [`test-reason.js`](test-reason.js) runs the shipped code — extracted from the page itself — through the verifier's self-check and a set of adversarial cases (`node test-reason.js`). That first real execution caught two parser bugs that careful hand-tracing had missed, which is its own small lesson about the difference between analysis and evidence. What remains untested is the live provider call itself — see [`DIRECTION.md`](DIRECTION.md) for the exact bar still to clear before either of us calls it finished.
 
 ### What this repository actually is
 

@@ -171,8 +171,13 @@ Respond with ONLY a JSON array of objects with "claim" and "evidence" keys. No o
     }
 
     function parseClaims(raw) {
-      const cleaned = raw.replace(/^```(json)?/i, '').replace(/```$/, '').trim();
-      const parsed = JSON.parse(cleaned);
+      // Models wrap JSON in markdown fences, add trailing newlines, or prepend
+      // "Here are the claims:" despite instructions not to. Rather than pattern-match
+      // every wrapper variant, extract the outermost JSON array directly.
+      const start = raw.indexOf('[');
+      const end = raw.lastIndexOf(']');
+      if (start === -1 || end <= start) throw new Error('Model did not return a JSON array.');
+      const parsed = JSON.parse(raw.slice(start, end + 1));
       if (!Array.isArray(parsed)) throw new Error('Model did not return a JSON array.');
       return parsed.filter(c => c && typeof c.claim === 'string' && typeof c.evidence === 'string');
     }
