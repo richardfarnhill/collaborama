@@ -102,7 +102,13 @@
     // arrives. This is the actual mechanism for "no fabricated certainty", not a prompt
     // instruction the model could ignore or hallucinate around.
     function normalize(s) {
-      return s.toLowerCase().replace(/\s+/g, ' ').trim();
+      return s
+        .toLowerCase()
+        .replace(/[‘’‚‛]/g, "'")   // curly single quotes -> straight
+        .replace(/[“”„‟]/g, '"')   // curly double quotes -> straight
+        .replace(/[–—]/g, '-')                // en/em dash -> hyphen
+        .replace(/\s+/g, ' ')
+        .trim();
     }
     function isGrounded(quote, source) {
       if (!quote || !quote.trim()) return false;
