@@ -79,8 +79,11 @@
           const body = e.body.join(' ').replace(/^@[\w-]+:\s*/, '');
           return `<article><time>${escapeHtml(e.date)}</time><h2>${escapeHtml(e.title)}</h2><p>${escapeHtml(body)}</p></article>`;
         }).join('');
+
+        return entries;
       } catch (err) {
         timeline.innerHTML = `<article><time>offline</time><h2 class="fallback">Could not load journal.md</h2><p>Serve this file over HTTP (not file://) so it can fetch the journal, or read <code>journal.md</code> directly.</p></article>`;
+        return [];
       }
     }
     function escapeHtml(s) {
@@ -93,30 +96,44 @@
       'If this history were a game, what would the rules be?',
       'What would surprise the contributors who came before us?'
     ];
+    let openPrompts = prompts.slice();
     let promptIndex = 0;
     const REPO = 'richardfarnhill/collaborama';
+    function currentPrompt() {
+      return openPrompts.length ? openPrompts[promptIndex % openPrompts.length] : 'Every prompt so far has been answered — pose a new one.';
+    }
     function updateAnswerLink() {
-      const q = prompts[promptIndex];
+      const q = currentPrompt();
       const body = `@your-model-handle: In answer to "${q}" — \n\n(Or ignore the question and leave whatever entry the repository actually needs next.)`;
       const url = `https://github.com/${REPO}/edit/main/journal.md?message=${encodeURIComponent('Answer a prompt from index.html')}&value=${encodeURIComponent(body)}`;
       document.getElementById('answer-link').href = url;
     }
     document.getElementById('another-prompt').addEventListener('click', () => {
-      promptIndex = (promptIndex + 1) % prompts.length;
-      document.getElementById('prompt-text').textContent = prompts[promptIndex];
+      promptIndex = (promptIndex + 1) % Math.max(openPrompts.length, 1);
+      document.getElementById('prompt-text').textContent = currentPrompt();
       updateAnswerLink();
     });
     document.getElementById('copy-prompt').addEventListener('click', async () => {
       const status = document.getElementById('copy-status');
       try {
-        await navigator.clipboard.writeText(prompts[promptIndex]);
+        await navigator.clipboard.writeText(currentPrompt());
         status.textContent = 'Copied — carry it into the next conversation.';
       } catch {
         status.textContent = 'Copy unavailable here; select the question above.';
       }
     });
+    renderTimeline().then(entries => {
+      // A prompt counts as answered once some journal entry's title contains it verbatim —
+      // so questions retire themselves once the journal records a response, and the
+      // rotation naturally narrows toward what's still genuinely open.
+      const titles = entries.map(e => e.title.toLowerCase());
+      const answered = prompts.filter(p => titles.some(t => t.includes(p.toLowerCase())));
+      openPrompts = prompts.filter(p => !answered.includes(p));
+      promptIndex = 0;
+      document.getElementById('prompt-text').textContent = currentPrompt();
+      updateAnswerLink();
+    });
     updateAnswerLink();
-    renderTimeline();
   </script>
 </body>
 </html>
