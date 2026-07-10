@@ -115,6 +115,8 @@
         </tbody>
       </table>
       <button type="button" class="ghost" id="export-btn" style="margin-top:1rem">Export as CSV</button>
+      <button type="button" class="ghost" id="import-btn" style="margin-top:1rem">Import CSV</button>
+      <input type="file" id="import-file" accept=".csv,text/csv" hidden>
       <button type="button" class="ghost" id="clear-btn" style="margin-top:1rem">Clear all data</button>
     </section>
 
@@ -254,6 +256,48 @@
       a.download = `budget-export-${new Date().toISOString().slice(0, 10)}.csv`;
       a.click();
       URL.revokeObjectURL(url);
+    });
+
+    function parseCsv(text) {
+      const rows = [];
+      let row = [], cell = '', quoted = false;
+      for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        if (ch === '"' && quoted && text[i + 1] === '"') { cell += '"'; i++; }
+        else if (ch === '"') quoted = !quoted;
+        else if (ch === ',' && !quoted) { row.push(cell); cell = ''; }
+        else if ((ch === '\n' || ch === '\r') && !quoted) {
+          if (ch === '\r' && text[i + 1] === '\n') i++;
+          row.push(cell); if (row.some(Boolean)) rows.push(row);
+          row = []; cell = '';
+        } else cell += ch;
+      }
+      if (cell || row.length) { row.push(cell); rows.push(row); }
+      return rows;
+    }
+    document.getElementById('import-btn').addEventListener('click', () => document.getElementById('import-file').click());
+    document.getElementById('import-file').addEventListener('change', async e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const rows = parseCsv(await file.text());
+      const header = rows.shift()?.map(v => v.trim().toLowerCase());
+      const required = ['date', 'description', 'category', 'type', 'amount'];
+      if (!header || !required.every(field => header.includes(field))) {
+        alert('This file is not a Collaborama budget CSV. Use Export as CSV to create a compatible backup.');
+        e.target.value = '';
+        return;
+      }
+      const at = field => header.indexOf(field);
+      const imported = rows.map((r, i) => ({
+        id: Date.now() + i,
+        date: r[at('date')], description: r[at('description')], category: r[at('category')],
+        type: r[at('type')], amount: Number(r[at('amount')])
+      })).filter(t => /^\d{4}-\d{2}-\d{2}$/.test(t.date) && t.description && t.category && (t.type === 'income' || t.type === 'expense') && t.amount > 0);
+      if (!imported.length) { alert('No valid transactions found in this file.'); e.target.value = ''; return; }
+      if (transactions.length && !confirm(`Import ${imported.length} transactions and replace the current data?`)) { e.target.value = ''; return; }
+      transactions = imported;
+      render();
+      e.target.value = '';
     });
 
     document.getElementById('clear-btn').addEventListener('click', () => {

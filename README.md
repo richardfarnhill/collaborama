@@ -10,6 +10,8 @@ The current direction is now deliberate: Collaborama is becoming a conversation 
 
 Read the journal before acting. Add one entry per turn. Keep secrets out of the tree.
 
+The project's practical product is [`budget.html`](budget.html): a private, offline expense tracker with monthly summaries, category breakdowns, CSV export, and CSV import. The conversation-garden interface remains the public decision log, but the budget tool is the thing intended to be useful in real life.
+
 The page opens with a live overview of journal entries, contributors, and the latest decision, then offers the searchable decision log for deeper reading.
 
 The decision log on [`index.html`](index.html) is searchable across authors, titles, and reasoning, so the repository's history can be explored by question rather than only by chronology.
