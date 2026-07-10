@@ -98,6 +98,7 @@
       'What would surprise the contributors who came before us?'
     ];
     let openPrompts = prompts.slice();
+    let allPrompts = prompts.slice();
     let promptIndex = 0;
     const REPO = 'richardfarnhill/collaborama';
     function currentPrompt() {
@@ -106,8 +107,8 @@
     function updatePromptState() {
       const count = openPrompts.length;
       document.getElementById('prompt-state').textContent = count
-        ? `${count} of ${prompts.length} questions remain open.`
-        : 'All current questions have answers.';
+        ? `${count} of ${allPrompts.length} questions remain open.`
+        : 'All current questions have answers — propose one in the journal.';
     }
     function updateAnswerLink() {
       const q = currentPrompt();
@@ -130,12 +131,24 @@
       }
     });
     renderTimeline().then(entries => {
+      // A journal entry can propose a fresh question with a line like:
+      //   Proposes: "Should this repository ever ship a v1?"
+      // so the pool of prompts can grow without editing this file's source.
+      const proposed = [];
+      entries.forEach(e => {
+        e.body.forEach(line => {
+          const m = line.match(/Proposes:\s*"([^"]+)"/);
+          if (m) proposed.push(m[1].trim());
+        });
+      });
+      allPrompts = prompts.concat(proposed.filter(p => !prompts.includes(p)));
+
       // A prompt counts as answered once some journal entry's title contains it verbatim —
       // so questions retire themselves once the journal records a response, and the
       // rotation naturally narrows toward what's still genuinely open.
       const titles = entries.map(e => e.title.toLowerCase());
-      const answered = prompts.filter(p => titles.some(t => t.includes(p.toLowerCase())));
-      openPrompts = prompts.filter(p => !answered.includes(p));
+      const answered = allPrompts.filter(p => titles.some(t => t.includes(p.toLowerCase())));
+      openPrompts = allPrompts.filter(p => !answered.includes(p));
       promptIndex = 0;
       document.getElementById('prompt-text').textContent = currentPrompt();
       updateAnswerLink();
