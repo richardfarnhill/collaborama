@@ -43,6 +43,13 @@
     .cat-bar-track { height:8px; border-radius:4px; background:#1c1a17; border:1px solid var(--line); overflow:hidden; }
     .cat-bar-fill { height:100%; background:var(--accent); }
     .cat-amount { text-align:right; color:var(--muted); font-variant-numeric:tabular-nums; }
+    .forecast-row { display:grid; grid-template-columns:110px 1fr auto; gap:.7rem; align-items:center; font-size:.85rem; }
+    .forecast-track { position:relative; height:10px; border-radius:5px; background:#1c1a17; border:1px solid var(--line); }
+    .forecast-fill { position:absolute; top:0; bottom:0; left:0; border-radius:5px; }
+    .forecast-fill.pos { background:var(--good); }
+    .forecast-fill.neg { background:var(--bad); }
+    .forecast-value { text-align:right; font-variant-numeric:tabular-nums; }
+    .forecast-value.neg { color:var(--bad); }
     footer { border-top:1px solid var(--line); padding-top:1.2rem; color:var(--muted); font-size:.85rem; }
     footer a { color:var(--muted); }
     @media (max-width:640px) {
@@ -85,6 +92,20 @@
         </div>
         <button type="submit">Add</button>
       </form>
+      <label style="margin-top:.8rem; display:flex; align-items:center; gap:.5rem; text-transform:none; font-size:.85rem; color:var(--muted)">
+        <input type="checkbox" id="f-recurring" style="width:auto"> Repeats
+        <select id="f-frequency" style="width:auto; display:none">
+          <option value="weekly">Weekly</option>
+          <option value="monthly" selected>Monthly</option>
+          <option value="yearly">Yearly</option>
+        </select>
+      </label>
+    </section>
+
+    <section>
+      <h2>Projected balance — next 90 days</h2>
+      <p class="lede" style="margin-bottom:1rem">Based on transactions marked "Repeats". A one-off purchase doesn't move this line; a recurring bill or paycheck does — this answers "will I be short before payday" instead of just "what have I spent."</p>
+      <div id="forecast-chart" class="categories"></div>
     </section>
 
     <section>
@@ -161,6 +182,65 @@
       renderSummary();
       renderCategories();
       renderCategoryList();
+      renderForecast();
+    }
+
+    // Projects a running balance forward from today using only transactions marked
+    // recurring — each occurrence is generated on its real calendar date (monthly means
+    // "same day next month", not "+30 days", so it stays correct across Feb/short months).
+    function addInterval(date, frequency) {
+      const d = new Date(date + 'T00:00:00');
+      if (frequency === 'weekly') d.setDate(d.getDate() + 7);
+      else if (frequency === 'yearly') d.setFullYear(d.getFullYear() + 1);
+      else d.setMonth(d.getMonth() + 1);
+      return d.toISOString().slice(0, 10);
+    }
+    function computeForecast(days) {
+      const today = new Date().toISOString().slice(0, 10);
+      const horizon = new Date();
+      horizon.setDate(horizon.getDate() + days);
+      const horizonStr = horizon.toISOString().slice(0, 10);
+      const recurring = transactions.filter(t => t.recurring);
+      const events = [];
+      recurring.forEach(t => {
+        let next = t.date;
+        while (next < today) next = addInterval(next, t.frequency);
+        while (next <= horizonStr) {
+          events.push({ date: next, signedAmount: t.type === 'income' ? t.amount : -t.amount });
+          next = addInterval(next, t.frequency);
+        }
+      });
+      events.sort((a, b) => a.date.localeCompare(b.date));
+      let running = 0;
+      const checkpoints = [today];
+      for (let i = 1; i <= 3; i++) {
+        const d = new Date(); d.setDate(d.getDate() + Math.round(days * i / 3));
+        checkpoints.push(d.toISOString().slice(0, 10));
+      }
+      return checkpoints.map(date => {
+        while (events.length && events[0].date <= date) running += events.shift().signedAmount;
+        return { date, balance: running };
+      });
+    }
+    function renderForecast() {
+      const container = document.getElementById('forecast-chart');
+      const recurringCount = transactions.filter(t => t.recurring).length;
+      if (!recurringCount) {
+        container.innerHTML = '<p class="empty">Mark a transaction as "Repeats" to see a forward projection.</p>';
+        return;
+      }
+      const points = computeForecast(90);
+      const max = Math.max(...points.map(p => Math.abs(p.balance)), 1);
+      container.innerHTML = points.map((p, i) => {
+        const pct = Math.abs(p.balance) / max * 100;
+        const sign = p.balance < 0 ? 'neg' : 'pos';
+        const label = i === 0 ? 'Today' : `+${Math.round(90 * i / 3)}d`;
+        return `<div class="forecast-row">
+          <span>${label}</span>
+          <span class="forecast-track"><span class="forecast-fill ${sign}" style="width:${pct.toFixed(0)}%"></span></span>
+          <span class="forecast-value ${sign}">${p.balance < 0 ? '-' : ''}${currency(Math.abs(p.balance))}</span>
+        </div>`;
+      }).join('');
     }
 
     function renderTable() {
@@ -172,7 +252,7 @@
       body.innerHTML = transactions.map(t => `
         <tr>
           <td>${escapeHtml(t.date)}</td>
-          <td>${escapeHtml(t.description)}</td>
+          <td>${escapeHtml(t.description)}${t.recurring ? ` <small style="color:var(--muted)">(repeats ${escapeHtml(t.frequency)})</small>` : ''}</td>
           <td>${escapeHtml(t.category)}</td>
           <td class="amount ${t.type}">${t.type === 'expense' ? '-' : '+'}${currency(t.amount)}</td>
           <td><button class="del" data-id="${t.id}" aria-label="Delete transaction">Delete</button></td>
@@ -222,6 +302,10 @@
       document.getElementById('category-list').innerHTML = cats.map(c => `<option value="${escapeHtml(c)}">`).join('');
     }
 
+    document.getElementById('f-recurring').addEventListener('change', e => {
+      document.getElementById('f-frequency').style.display = e.target.checked ? 'inline-block' : 'none';
+    });
+
     document.getElementById('entry-form').addEventListener('submit', e => {
       e.preventDefault();
       const date = document.getElementById('f-date').value;
@@ -229,10 +313,13 @@
       const category = document.getElementById('f-category').value.trim();
       const amount = parseFloat(document.getElementById('f-amount').value);
       const type = document.getElementById('f-type').value;
+      const recurring = document.getElementById('f-recurring').checked;
+      const frequency = document.getElementById('f-frequency').value;
       if (!date || !description || !category || !(amount > 0)) return;
-      transactions.push({ id: Date.now(), date, description, category, amount, type });
+      transactions.push({ id: Date.now(), date, description, category, amount, type, recurring, frequency: recurring ? frequency : null });
       e.target.reset();
       document.getElementById('f-date').value = date;
+      document.getElementById('f-frequency').style.display = 'none';
       render();
     });
 
@@ -244,9 +331,9 @@
     });
 
     document.getElementById('export-btn').addEventListener('click', () => {
-      const header = 'Date,Description,Category,Type,Amount\n';
+      const header = 'Date,Description,Category,Type,Amount,Recurring,Frequency\n';
       const rows = transactions.map(t =>
-        [t.date, t.description, t.category, t.type, t.amount.toFixed(2)]
+        [t.date, t.description, t.category, t.type, t.amount.toFixed(2), t.recurring ? 'yes' : '', t.frequency || '']
           .map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')
       ).join('\n');
       const blob = new Blob([header + rows], { type: 'text/csv' });
@@ -288,10 +375,13 @@
         return;
       }
       const at = field => header.indexOf(field);
+      const hasRecurringCols = header.includes('recurring') && header.includes('frequency');
       const imported = rows.map((r, i) => ({
         id: Date.now() + i,
         date: r[at('date')], description: r[at('description')], category: r[at('category')],
-        type: r[at('type')], amount: Number(r[at('amount')])
+        type: r[at('type')], amount: Number(r[at('amount')]),
+        recurring: hasRecurringCols && r[at('recurring')]?.trim().toLowerCase() === 'yes',
+        frequency: hasRecurringCols ? (r[at('frequency')]?.trim() || null) : null
       })).filter(t => /^\d{4}-\d{2}-\d{2}$/.test(t.date) && t.description && t.category && (t.type === 'income' || t.type === 'expense') && t.amount > 0);
       if (!imported.length) { alert('No valid transactions found in this file.'); e.target.value = ''; return; }
       if (transactions.length && !confirm(`Import ${imported.length} transactions and replace the current data?`)) { e.target.value = ''; return; }
