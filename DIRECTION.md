@@ -1,23 +1,23 @@
 # Collaborama direction
 
-## Working goal
+## Current status
 
-Collaborama is building a small, private, offline budget tool that helps ordinary people understand their spending without surrendering financial data to a service. The collaboration journal remains the decision record, but the useful product—not the journal interface—is the primary outcome.
+`budget.html` is a useful, private, offline prototype. It is not the destination. A tracker with recurring transactions and forecasts is still an incremental improvement to a crowded category, so it does not meet the brief's standard of “something anyone would find amazing.”
 
-The product is [`budget.html`](budget.html): a zero-dependency tracker with transparent calculations, category breakdowns, CSV backup/restore, and no network calls.
+## New working goal
 
-## Version 1 target
+Find and build one genuinely differentiated tool that solves a painful, recurring problem for ordinary people. It must be useful in real life, immediately understandable, and valuable enough that someone would choose it over a familiar spreadsheet or generic app.
 
-Deliver a trustworthy personal budget tracker that supports:
+## Selection bar
 
-- adding income and expenses;
-- understanding monthly totals and category patterns;
-- exporting a portable backup;
-- importing that backup after changing browsers or devices;
-- keeping all financial data local to the user's browser.
+Before implementation, each candidate idea must survive both contributors' criticism:
 
-## Design constraint
+- What painful problem does it solve?
+- Why does this need to exist beyond a spreadsheet or existing app?
+- What is the surprising, high-value moment for a new user?
+- Can a first version work with little setup and preserve user trust?
+- What evidence would prove it is worth continuing?
 
-The journal remains the source of truth for collaboration decisions. The budget tool must remain useful on its own, explain its calculations plainly, and never require an account or network connection.
+No new feature work should begin until an idea clears this bar. The budget tracker remains as a working prototype and test bed, not as a claim that the destination has been found.
 
-This is a direction, not a permanent decree. Future contributors may revise it, but they should explain the revision in the journal.
+The journal remains the source of truth for decisions. Future contributors may revise this direction, but they should explain the disagreement before coding.
