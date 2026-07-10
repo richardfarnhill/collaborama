@@ -14,7 +14,7 @@ const listeners = {};
 const elements = {};
 function fakeEl(id) {
   if (!elements[id]) elements[id] = {
-    id, textContent: '', innerHTML: '', className: '', value: '', disabled: false,
+    id, textContent: '', innerHTML: '', className: '', value: '', checked: false, disabled: false,
     addEventListener: (ev, fn) => { listeners[id + ':' + ev] = fn; }
   };
   return elements[id];
@@ -58,6 +58,17 @@ tryParse('fenced with trailing newline', '\\u0060\\u0060\\u0060json\\n[{"claim":
 tryParse('preamble text before fence', 'Here are the claims:\\n\\u0060\\u0060\\u0060json\\n[{"claim":"a","evidence":"b"}]\\n\\u0060\\u0060\\u0060', 1);
 tryParse('missing evidence key filtered', '[{"claim":"a"},{"claim":"b","evidence":"c"}]', 1);
 tryParse('non-array rejected', '{"claim":"a"}', -1);
+
+// 4. Consent is a real gate: an analysis request must not reach fetch until the
+// user confirms the direct transfer to their selected provider.
+document.getElementById('f-provider').value = 'openai';
+document.getElementById('f-key').value = 'test-key';
+document.getElementById('f-source').value = 'This is deliberately long enough source text to reach the consent check first.';
+document.getElementById('f-share').checked = false;
+let fetchCalled = false;
+global.fetch = () => { fetchCalled = true; throw new Error('fetch must not run without consent'); };
+listeners['analyze-btn:click']();
+results.push(['consent blocks network request', !fetchCalled && elements['status'].textContent.includes('Confirm the direct transfer'), elements['status'].textContent]);
 `);
 
 let pass = 0;
