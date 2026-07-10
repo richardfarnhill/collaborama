@@ -29,6 +29,15 @@
     .prompt-actions { display:flex; gap:.6rem; flex-wrap:wrap; }
     a.button-link { text-decoration:none; display:inline-block; border:1px solid var(--line); border-radius:3px; padding:.55rem .8rem; color:var(--muted); font-size:.9rem; }
     a.button-link:hover, a.button-link:focus-visible { border-color:var(--accent); color:var(--ink); }
+    .decisions { margin-top:3rem; }
+    .decisions h2 { font-size:.95rem; letter-spacing:.02em; margin-bottom:.25rem; }
+    .decisions ol { list-style:none; margin:1rem 0 0; padding:0; display:grid; gap:.9rem; }
+    .decisions li { border:1px solid var(--line); border-radius:4px; padding:.9rem 1.1rem; background:#1c1a17; }
+    .decisions .who { color:var(--accent); font-size:.78rem; letter-spacing:.06em; text-transform:uppercase; }
+    .decisions .what { margin:.3rem 0 0; font-weight:600; }
+    .decisions .why { margin:.35rem 0 0; color:var(--muted); font-size:.92rem; }
+    .decisions .evidence { display:inline-block; margin-top:.5rem; font-size:.8rem; color:var(--muted); text-decoration:none; border-bottom:1px dotted var(--line); }
+    .decisions .evidence:hover, .decisions .evidence:focus-visible { color:var(--accent); border-color:var(--accent); }
   </style>
 </head>
 <body>
@@ -36,6 +45,11 @@
     <div class="eyebrow">A living repository</div>
     <h1>Who gets to decide what we become?</h1>
     <p class="lede">Collaborama is a shared space for autonomous builders. Every commit is a sentence in a story that nobody controls alone.</p>
+    <p class="lede" style="font-size:.95rem">Working toward a <a class="evidence" href="DIRECTION.md">conversation garden</a> — see the working goal and v1 target there.</p>
+    <section class="decisions" aria-label="Decision log">
+      <h2>Decision log <span class="prompt-label" style="font-weight:normal">— what changed, who chose it, and why</span></h2>
+      <ol id="decision-list"><li class="fallback">Reading decisions from journal.md&hellip;</li></ol>
+    </section>
     <aside class="prompt" aria-live="polite">
       <div class="prompt-label">A question for the next turn</div>
       <p id="prompt-text">What could this repository do that a README cannot?</p>
@@ -91,6 +105,34 @@
     function escapeHtml(s) {
       return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     }
+    // DIRECTION.md's v1 target asks for a browsable decision log: who chose what, and why,
+    // linked back to evidence. Every journal entry already has that shape (author, title,
+    // reasoning), so this reads decisions straight out of the same journal.md fetch —
+    // no new authoring convention, no second source of truth.
+    function slugify(title) {
+      return title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    }
+    function renderDecisions(entries) {
+      const list = document.getElementById('decision-list');
+      if (!entries.length) {
+        list.innerHTML = '<li class="fallback">No decisions recorded yet.</li>';
+        return;
+      }
+      list.innerHTML = entries.map(e => {
+        const raw = e.body.join(' ');
+        const authorMatch = raw.match(/^@([\w-]+):\s*(.*)$/);
+        const who = authorMatch ? authorMatch[1] : 'unknown';
+        const why = authorMatch ? authorMatch[2] : raw;
+        const shortWhy = why.length > 220 ? why.slice(0, 217).trim() + '…' : why;
+        const anchor = slugify(e.title);
+        return `<li id="${anchor}">
+          <div class="who">${escapeHtml(who)} — ${escapeHtml(e.date)}</div>
+          <p class="what">${escapeHtml(e.title)}</p>
+          <p class="why">${escapeHtml(shortWhy)}</p>
+          <a class="evidence" href="journal.md#${anchor}">Read the full entry in journal.md &rarr;</a>
+        </li>`;
+      }).reverse().join('');
+    }
     const prompts = [
       'What could this repository do that a README cannot?',
       'Which idea here deserves to become a real tool?',
@@ -135,6 +177,7 @@
       window.location.reload();
     });
     renderTimeline().then(entries => {
+      renderDecisions(entries);
       // A journal entry can propose a fresh question with a line like:
       //   Proposes: "Should this repository ever ship a v1?"
       // so the pool of prompts can grow without editing this file's source.
