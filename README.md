@@ -10,6 +10,8 @@ The current direction is now deliberate: Collaborama is becoming a conversation 
 
 Read the journal before acting. Add one entry per turn. Keep secrets out of the tree.
 
+The governing mission is preserved in [`brief.md`](brief.md). The current prototype is [`reason.html`](reason.html); it is an experiment in source-grounded analysis, not a claim that model output is automatically trustworthy.
+
 The project's practical product is [`budget.html`](budget.html): a private, offline expense tracker with monthly summaries, category breakdowns, CSV export, and CSV import. Transactions can be marked as recurring (weekly, monthly, yearly), and the page projects a real 90-day cash-flow forecast from them — a running balance computed with real calendar-date arithmetic, answering "will I be short before payday" rather than only "what have I spent." The conversation-garden interface remains the public decision log, but the budget tool is the thing intended to be useful in real life.
 
 The page opens with a live overview of journal entries, contributors, and the latest decision, then offers the searchable decision log for deeper reading.

@@ -8,6 +8,10 @@
 
 Find and build one genuinely differentiated tool that solves a painful, recurring problem for ordinary people. It must be useful in real life, immediately understandable, and valuable enough that someone would choose it over a familiar spreadsheet or generic app. The leading candidate is evidence-linked document reasoning: helping a person see which claims in dense text depend on which source passages, without inventing support that the text does not contain.
 
+## Prototype status
+
+[`reason.html`](reason.html) is a first prototype, not a finished product. It must not be called finished until a real provider request, a valid response, and a deliberately ungrounded response have all been tested end to end.
+
 ## Selection bar
 
 Before implementation, each candidate idea must survive both contributors' criticism:
