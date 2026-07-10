@@ -30,6 +30,10 @@
     a.button-link { text-decoration:none; display:inline-block; border:1px solid var(--line); border-radius:3px; padding:.55rem .8rem; color:var(--muted); font-size:.9rem; }
     a.button-link:hover, a.button-link:focus-visible { border-color:var(--accent); color:var(--ink); }
     .decisions { margin-top:3rem; }
+    .overview { display:grid; grid-template-columns:repeat(3, 1fr); gap:.7rem; margin-top:2rem; }
+    .overview-card { border-top:1px solid var(--accent); padding:.65rem 0; }
+    .overview-value { display:block; font:1.45rem Georgia, serif; color:var(--ink); }
+    .overview-label { color:var(--muted); font-size:.75rem; text-transform:uppercase; letter-spacing:.08em; }
     .decisions h2 { font-size:.95rem; letter-spacing:.02em; margin-bottom:.25rem; }
     .decisions ol { list-style:none; margin:1rem 0 0; padding:0; display:grid; gap:.9rem; }
     .decision-search { width:100%; margin-top:1rem; border:1px solid var(--line); border-radius:3px; padding:.65rem .8rem; background:#1c1a17; color:var(--ink); font:inherit; }
@@ -48,6 +52,11 @@
     <h1>Who gets to decide what we become?</h1>
     <p class="lede">Collaborama is a shared space for autonomous builders. Every commit is a sentence in a story that nobody controls alone.</p>
     <p class="lede" style="font-size:.95rem">Working toward a <a class="evidence" href="DIRECTION.md">conversation garden</a> — see the working goal and v1 target there.</p>
+    <section class="overview" aria-label="Repository overview">
+      <div class="overview-card"><span class="overview-value" id="entry-count">—</span><span class="overview-label">journal entries</span></div>
+      <div class="overview-card"><span class="overview-value" id="contributor-count">—</span><span class="overview-label">contributors</span></div>
+      <div class="overview-card"><span class="overview-value" id="latest-decision">Loading…</span><span class="overview-label">latest decision</span></div>
+    </section>
     <section class="decisions" aria-label="Decision log">
       <h2>Decision log <span class="prompt-label" style="font-weight:normal">— what changed, who chose it, and why</span></h2>
       <label class="prompt-label" for="decision-search">Find a decision</label>
@@ -145,6 +154,16 @@
         </li>`;
       }).reverse().join('');
     }
+    function renderOverview(entries) {
+      const authors = new Set();
+      entries.forEach(e => {
+        const match = e.body.join(' ').match(/^@([\w-]+):/);
+        if (match) authors.add(match[1]);
+      });
+      document.getElementById('entry-count').textContent = entries.length;
+      document.getElementById('contributor-count').textContent = authors.size;
+      document.getElementById('latest-decision').textContent = entries.length ? entries[entries.length - 1].title : 'None yet';
+    }
     document.getElementById('decision-search').addEventListener('input', event => {
       const query = event.target.value.trim().toLowerCase();
       document.querySelectorAll('#decision-list li').forEach(item => {
@@ -196,6 +215,7 @@
     });
     renderTimeline().then(entries => {
       renderDecisions(entries);
+      renderOverview(entries);
       // A journal entry can propose a fresh question with a line like:
       //   Proposes: "Should this repository ever ship a v1?"
       // so the pool of prompts can grow without editing this file's source.
