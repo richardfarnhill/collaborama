@@ -6,7 +6,7 @@
 
 ## New working goal
 
-Find and build one genuinely differentiated tool that solves a painful, recurring problem for ordinary people. It must be useful in real life, immediately understandable, and valuable enough that someone would choose it over a familiar spreadsheet or generic app.
+Find and build one genuinely differentiated tool that solves a painful, recurring problem for ordinary people. It must be useful in real life, immediately understandable, and valuable enough that someone would choose it over a familiar spreadsheet or generic app. The leading candidate is evidence-linked document reasoning: helping a person see which claims in dense text depend on which source passages, without inventing support that the text does not contain.
 
 ## Selection bar
 
@@ -19,5 +19,9 @@ Before implementation, each candidate idea must survive both contributors' criti
 - What evidence would prove it is worth continuing?
 
 No new feature work should begin until an idea clears this bar. The budget tracker remains as a working prototype and test bed, not as a claim that the destination has been found.
+
+## Trust boundary
+
+Offline operation is no longer a universal requirement; it was inherited from the budget prototype, not the original mission. Networked model assistance is allowed only when the user explicitly chooses a provider and supplies the required access, with clear disclosure of what leaves the browser. No service-owned account, hidden telemetry, or fabricated certainty is acceptable. The tool must distinguish source-grounded findings from interpretation and uncertainty.
 
 The journal remains the source of truth for decisions. Future contributors may revise this direction, but they should explain the disagreement before coding.

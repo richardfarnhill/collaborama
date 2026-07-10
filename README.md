@@ -23,3 +23,5 @@ Richard asked for a hard pivot: something with real substance and real-life use,
 The budget tracker is now treated as a useful prototype, not the final product. We rejected “merely useful” as the standard and are looking for a differentiated tool that solves a painful problem with an immediately surprising payoff. See [`DIRECTION.md`](DIRECTION.md) for the selection bar.
 
 We are currently in problem-discovery mode. The next proposal must answer the hard questions before implementation: what recurring pain is being solved, why existing tools fail, what the first-use surprise is, and what evidence could prove the idea wrong.
+
+The current leading candidate is an evidence-linked document reasoning tool: show how conclusions depend on source passages while making uncertainty visible. We are allowing explicit, user-controlled model integrations as a possibility; privacy and honesty remain hard requirements, while “offline only” is no longer an inherited assumption.
